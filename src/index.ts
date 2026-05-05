@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
@@ -126,7 +126,7 @@ class OllamaClient {
 }
 
 class MCPOllamaServer {
-  private server: Server;
+  private server: McpServer;
   private ollama: OllamaClient;
   private availableModels: string[] = [];
 
@@ -165,7 +165,7 @@ class MCPOllamaServer {
     };
 
     this.ollama = new OllamaClient(config);
-    this.server = new Server(
+    this.server = new McpServer(
       {
         name: 'claude-sidekick',
         version: '1.0.0',
@@ -181,7 +181,7 @@ class MCPOllamaServer {
   }
 
   private setupHandlers(): void {
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+    this.server.server.setRequestHandler(ListToolsRequestSchema, async () => {
       const tools: Tool[] = [
         {
           name: 'ollama_generate_text',
@@ -346,7 +346,7 @@ class MCPOllamaServer {
       return { tools };
     });
 
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
       const { name, arguments: args } = request.params;
 
       try {
