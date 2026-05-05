@@ -26,8 +26,7 @@
   "author": "Alvin Wilta",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.1",
-    "axios": "^1.7.7"
+    "@modelcontextprotocol/sdk": "^1.17.1"
   },
   "devDependencies": {
     "@types/node": "^22.5.4",

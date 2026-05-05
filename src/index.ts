@@ -6,10 +6,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   type CallToolRequest,
-  type ListToolsRequest,
 } from '@modelcontextprotocol/sdk/types.js';
-import axios from 'axios';
-import type { AxiosInstance } from 'axios';
 
 // Define Tool interface inline since it might not be exported
 interface Tool {
@@ -35,24 +32,49 @@ interface OllamaConfig {
 }
 
 class OllamaClient {
-  private client: AxiosInstance;
   private config: OllamaConfig;
 
   constructor(config: OllamaConfig) {
     this.config = config;
-    this.client = axios.create({
-      baseURL: config.baseUrl,
-      timeout: config.timeout,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+  }
+
+  private async requestJson<TResponse>(
+    path: string,
+    init: RequestInit & { timeoutMs?: number } = {}
+  ): Promise<TResponse> {
+    const url = new URL(path, this.config.baseUrl).toString();
+
+    const controller = new AbortController();
+    const timeoutMs = init.timeoutMs ?? this.config.timeout;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const res = await fetch(url, {
+        ...init,
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(init.headers ?? {}),
+        },
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status} ${res.statusText}${text ? `: ${text}` : ''}`);
+      }
+
+      return (await res.json()) as TResponse;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   async listModels(): Promise<string[]> {
     try {
-      const response = await this.client.get('/api/tags');
-      return response.data.models?.map((model: any) => model.name) || [];
+      const data = await this.requestJson<{ models?: { name: string }[] }>('/api/tags', {
+        method: 'GET',
+      });
+      return data.models?.map((model) => model.name) || [];
     } catch (error) {
       console.error('Failed to list Ollama models:', error);
       return [];
@@ -61,19 +83,22 @@ class OllamaClient {
 
   async generateText(model: string, prompt: string, options: any = {}): Promise<string> {
     try {
-      const response = await this.client.post('/api/generate', {
-        model,
-        prompt,
-        stream: false,
-        options: {
-          temperature: options.temperature || 0.7,
-          top_p: options.top_p || 0.9,
-          top_k: options.top_k || 40,
-          ...options,
-        },
+      const data = await this.requestJson<{ response?: string }>('/api/generate', {
+        method: 'POST',
+        body: JSON.stringify({
+          model,
+          prompt,
+          stream: false,
+          options: {
+            temperature: options.temperature || 0.7,
+            top_p: options.top_p || 0.9,
+            top_k: options.top_k || 40,
+            ...options,
+          },
+        }),
       });
 
-      return response.data.response || '';
+      return data.response || '';
     } catch (error) {
       throw new Error(`Ollama generation failed: ${error}`);
     }
@@ -81,18 +106,21 @@ class OllamaClient {
 
   async chatCompletion(model: string, messages: any[], options: any = {}): Promise<string> {
     try {
-      const response = await this.client.post('/api/chat', {
-        model,
-        messages,
-        stream: false,
-        options: {
-          temperature: options.temperature || 0.7,
-          top_p: options.top_p || 0.9,
-          ...options,
-        },
+      const data = await this.requestJson<{ message?: { content?: string } }>('/api/chat', {
+        method: 'POST',
+        body: JSON.stringify({
+          model,
+          messages,
+          stream: false,
+          options: {
+            temperature: options.temperature || 0.7,
+            top_p: options.top_p || 0.9,
+            ...options,
+          },
+        }),
       });
 
-      return response.data.message?.content || '';
+      return data.message?.content || '';
     } catch (error) {
       throw new Error(`Ollama chat completion failed: ${error}`);
     }
@@ -100,12 +128,15 @@ class OllamaClient {
 
   async generateEmbedding(model: string, text: string): Promise<number[]> {
     try {
-      const response = await this.client.post('/api/embeddings', {
-        model,
-        prompt: text,
+      const data = await this.requestJson<{ embedding?: number[] }>('/api/embeddings', {
+        method: 'POST',
+        body: JSON.stringify({
+          model,
+          prompt: text,
+        }),
       });
 
-      return response.data.embedding || [];
+      return data.embedding || [];
     } catch (error) {
       throw new Error(`Ollama embedding generation failed: ${error}`);
     }
@@ -113,9 +144,12 @@ class OllamaClient {
 
   async pullModel(model: string): Promise<boolean> {
     try {
-      await this.client.post('/api/pull', {
-        name: model,
-        stream: false,
+      await this.requestJson('/api/pull', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: model,
+          stream: false,
+        }),
       });
       return true;
     } catch (error) {
