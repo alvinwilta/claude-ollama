@@ -60,6 +60,12 @@ Optionally, create a local env file (recommended):
 cp .env.example .env
 ```
 
+Add the MCP server to Claude using the CLI (stdio transport):
+
+```bash
+claude mcp add --transport stdio claude-ollama -- node /absolute/path/to/claude-ollama/dist/index.js
+```
+
 ### 4. Configure Claude Desktop
 
 Add the server to your Claude Desktop configuration:
@@ -123,6 +129,8 @@ Download new models to Ollama.
 ## Usage Examples
 
 Once configured, Claude can use these tools like this:
+
+For copy/pasteable Claude CLI prompt templates (including stdin/pipe examples), see `CLAUDE.md`.
 
 **Text Generation:**
 > "Use Ollama to generate a simple email template for customer onboarding"
