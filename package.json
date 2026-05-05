@@ -14,7 +14,10 @@
     "watch": "tsx watch src/index.ts",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "setup_mac": "bash scripts/setup_mac.sh",
+    "run_mac": "bash scripts/run_mac.sh",
+    "kill_mac": "bash scripts/kill_mac.sh"
   },
   "keywords": [
     "mcp",
