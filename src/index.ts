@@ -7,6 +7,28 @@ import {
   ListToolsRequestSchema,
   type CallToolRequest,
 } from '@modelcontextprotocol/sdk/types.js';
+import 'dotenv/config';
+
+function getDefaultModelText(): string {
+  return process.env.OLLAMA_DEFAULT_MODEL_TEXT || process.env.OLLAMA_DEFAULT_MODEL || 'gpt-oss';
+}
+
+function getDefaultModelChat(): string {
+  return process.env.OLLAMA_DEFAULT_MODEL_CHAT || process.env.OLLAMA_DEFAULT_MODEL || 'gpt-oss';
+}
+
+function getDefaultModelCode(): string {
+  return process.env.OLLAMA_DEFAULT_MODEL_CODE || process.env.OLLAMA_DEFAULT_MODEL || 'gpt-oss';
+}
+
+function getDefaultModelSummarise(): string {
+  return process.env.OLLAMA_DEFAULT_MODEL_SUMMARISE || process.env.OLLAMA_DEFAULT_MODEL || 'gpt-oss';
+}
+
+function getDefaultModelEmbed(): string {
+  // Embeddings often require a dedicated embedding model; do not fall back to the global text model.
+  return process.env.OLLAMA_DEFAULT_MODEL_EMBED || 'nomic-embed-text';
+}
 
 // Define Tool interface inline since it might not be exported
 interface Tool {
@@ -167,8 +189,8 @@ class MCPOllamaServer {
   constructor() {
     // Default configuration - modify as needed
     const config: OllamaConfig = {
-      baseUrl: 'http://localhost:11434',
-      timeout: 300000, // 5 minutes for large models
+      baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+      timeout: Number.parseInt(process.env.OLLAMA_TIMEOUT || '300000', 10) || 300000, // 5 minutes for large models
       models: [
         {
           name: 'gpt-oss',
@@ -201,7 +223,7 @@ class MCPOllamaServer {
     this.ollama = new OllamaClient(config);
     this.server = new McpServer(
       {
-        name: 'claude-sidekick',
+        name: 'claude-ollama',
         version: '1.0.0',
       },
       {
@@ -216,6 +238,11 @@ class MCPOllamaServer {
 
   private setupHandlers(): void {
     this.server.server.setRequestHandler(ListToolsRequestSchema, async () => {
+      const defaultModelText = getDefaultModelText();
+      const defaultModelChat = getDefaultModelChat();
+      const defaultModelCode = getDefaultModelCode();
+      const defaultModelSummarise = getDefaultModelSummarise();
+      const defaultModelEmbed = getDefaultModelEmbed();
       const tools: Tool[] = [
         {
           name: 'ollama_generate_text',
@@ -226,7 +253,7 @@ class MCPOllamaServer {
               model: {
                 type: 'string',
                 description: 'Ollama model name (e.g., gpt-oss, llama3.2, qwen2.5)',
-                default: 'gpt-oss',
+                default: defaultModelText,
               },
               prompt: {
                 type: 'string',
@@ -255,7 +282,7 @@ class MCPOllamaServer {
               model: {
                 type: 'string',
                 description: 'Ollama model name',
-                default: 'gpt-oss',
+                default: defaultModelChat,
               },
               messages: {
                 type: 'array',
@@ -291,7 +318,7 @@ class MCPOllamaServer {
               model: {
                 type: 'string',
                 description: 'Embedding model name',
-                default: 'nomic-embed-text',
+                default: defaultModelEmbed,
               },
               text: {
                 type: 'string',
@@ -310,7 +337,7 @@ class MCPOllamaServer {
               model: {
                 type: 'string',
                 description: 'Coding model name',
-                default: 'gpt-oss',
+                default: defaultModelCode,
               },
               task: {
                 type: 'string',
@@ -337,7 +364,7 @@ class MCPOllamaServer {
             properties: {
               model: {
                 type: 'string',
-                default: 'gpt-oss',
+                default: defaultModelSummarise,
               },
               text: {
                 type: 'string',
@@ -424,7 +451,7 @@ class MCPOllamaServer {
   }
 
   private async handleTextGeneration(args: any) {
-    const { model = 'gpt-oss', prompt, temperature = 0.7, max_tokens = 2048 } = args;
+    const { model = getDefaultModelText(), prompt, temperature = 0.7, max_tokens = 2048 } = args;
 
     const enhancedPrompt = `${prompt}\n\nPlease provide a clear, concise response.`;
     const response = await this.ollama.generateText(model, enhancedPrompt, {
@@ -443,7 +470,7 @@ class MCPOllamaServer {
   }
 
   private async handleChatCompletion(args: any) {
-    const { model = 'gpt-oss', messages, temperature = 0.7 } = args;
+    const { model = getDefaultModelChat(), messages, temperature = 0.7 } = args;
 
     const response = await this.ollama.chatCompletion(model, messages, {
       temperature,
@@ -460,7 +487,7 @@ class MCPOllamaServer {
   }
 
   private async handleEmbedding(args: any) {
-    const { model = 'nomic-embed-text', text } = args;
+    const { model = getDefaultModelEmbed(), text } = args;
 
     const embedding = await this.ollama.generateEmbedding(model, text);
 
@@ -475,7 +502,7 @@ class MCPOllamaServer {
   }
 
   private async handleCodeGeneration(args: any) {
-    const { model = 'gpt-oss', task, language = 'python', temperature = 0.2 } = args;
+    const { model = getDefaultModelCode(), task, language = 'python', temperature = 0.2 } = args;
 
     const prompt = `Generate ${language} code for the following task:\n\n${task}\n\nProvide clean, modern code that follows best practices:`;
 
@@ -495,7 +522,7 @@ class MCPOllamaServer {
   }
 
   private async handleSummarisation(args: any) {
-    const { model = 'gpt-oss', text, length = 'medium' } = args;
+    const { model = getDefaultModelSummarise(), text, length = 'medium' } = args;
 
     const lengthInstructions = {
       brief: 'Provide a very brief summary in 1-2 sentences.',

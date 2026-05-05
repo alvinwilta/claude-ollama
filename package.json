@@ -1,11 +1,11 @@
 {
-  "name": "claude-sidekick",
+  "name": "claude-ollama",
   "version": "1.0.0",
   "description": "MCP server for integrating Claude with local Ollama models",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "claude-sidekick": "dist/index.js"
+    "claude-ollama": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -26,7 +26,8 @@
   "author": "Alvin Wilta",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.1"
+    "@modelcontextprotocol/sdk": "^1.17.1",
+    "dotenv": "^17.2.1"
   },
   "devDependencies": {
     "@types/node": "^22.5.4",
