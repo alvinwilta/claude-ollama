@@ -23,7 +23,7 @@
     "local-models",
     "claude"
   ],
-  "author": "Andrew Brereton",
+  "author": "Alvin Wilta",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.1",
