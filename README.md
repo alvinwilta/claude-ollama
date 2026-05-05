@@ -1,4 +1,4 @@
-# Claude Sidekick
+# Claude Ollama
 
 A Model Context Protocol (MCP) server that connects Claude to your local Ollama models, allowing you to offload simpler tasks and save your Claude tokens for complex work.
 
@@ -42,22 +42,22 @@ ollama pull llama3.2:1b       # Lightweight for simple tasks
 
 ### 3. Set Up the MCP Server
 
-Create a new directory and install dependencies:
+Clone this repo and install dependencies:
 
 ```bash
-mkdir mcp-ollama-server
-cd mcp-ollama-server
+git clone /path/to/claude-ollama
+cd claude-ollama
 
-# Copy the files (index.ts, package.json, tsconfig.json)
-# Then install dependencies:
 npm install
-
-# Create src directory and move index.ts there
-mkdir src
-mv index.ts src/
 
 # Build the project
 npm run build
+```
+
+Optionally, create a local env file (recommended):
+
+```bash
+cp .env.example .env
 ```
 
 ### 4. Configure Claude Desktop
@@ -72,8 +72,12 @@ Add the server to your Claude Desktop configuration:
   "mcpServers": {
     "ollama": {
       "command": "node",
-      "args": ["/absolute/path/to/your/mcp-ollama-server/dist/index.js"],
-      "env": {}
+      "args": ["/absolute/path/to/claude-ollama/dist/index.js"],
+      "env": {
+        "OLLAMA_BASE_URL": "http://localhost:11434",
+        "OLLAMA_TIMEOUT": "300000",
+        "OLLAMA_DEFAULT_MODEL": "gpt-oss"
+      }
     }
   }
 }
@@ -153,20 +157,27 @@ Once configured, Claude can use these tools like this:
 
 ### Customising the Server
 
-Edit `src/index.ts` to modify:
-
-- **Base URL:** Change Ollama endpoint (default: `http://localhost:11434`)
-- **Timeout:** Adjust request timeout (default: 5 minutes)
-- **Default Models:** Modify which models are used by default
-- **Temperature Settings:** Adjust creativity/randomness
+Most configuration is done via environment variables (or a local `.env` file). If you need custom tool behavior, prompts, or to add/remove tools, edit `src/index.ts`.
 
 ### Environment Variables
 
-You can override settings with environment variables:
+You can override settings with environment variables (or put these in `.env`):
 
 ```bash
 export OLLAMA_BASE_URL=http://localhost:11434
 export OLLAMA_TIMEOUT=300000
+
+# Global default model used when tool calls omit `model`
+export OLLAMA_DEFAULT_MODEL=gpt-oss
+
+# Optional per-tool defaults (override OLLAMA_DEFAULT_MODEL)
+export OLLAMA_DEFAULT_MODEL_TEXT=gpt-oss
+export OLLAMA_DEFAULT_MODEL_CHAT=gpt-oss
+export OLLAMA_DEFAULT_MODEL_CODE=gpt-oss
+export OLLAMA_DEFAULT_MODEL_SUMMARISE=gpt-oss
+
+# Embeddings usually require an embedding model; defaults to `nomic-embed-text`
+export OLLAMA_DEFAULT_MODEL_EMBED=nomic-embed-text
 ```
 
 ## Troubleshooting
