@@ -1,7 +1,7 @@
 # Claude Ollama
 
 Forked from https://github.com/andrewbrereton/claude-sidekick
-A Model Context Protocol (MCP) server that connects Claude to your local Ollama models, allowing you to offload simpler tasks and save your Claude tokens for complex work.
+A Model Context Protocol (MCP) server that connects Claude to your local Ollama models, allowing you to offload simpler tasks and save your Claude tokens for complex work. Modified to use the latest MCP server package and added support for model customizations via env, rather than directly on code. Added scripts to automatically setups the MCP server as well.
 
 ## Quick Start
 

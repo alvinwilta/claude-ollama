@@ -11,7 +11,6 @@ cd "$ROOT_DIR"
 
 PID_DIR="$ROOT_DIR/.claude-ollama-pids"
 OLLAMA_PID_FILE="$PID_DIR/ollama.pid"
-MCP_PID_FILE="$PID_DIR/mcp.pid"
 
 kill_pid_file() {
   local label="$1"
@@ -48,11 +47,9 @@ kill_pid_file() {
   rm -f "$pid_file"
 }
 
-kill_pid_file "MCP server" "$MCP_PID_FILE"
 kill_pid_file "Ollama" "$OLLAMA_PID_FILE"
 
-# Best-effort cleanup if pid files were missing/stale.
-pkill -f "node .*claude-ollama/dist/index.js" >/dev/null 2>&1 || true
+# Best-effort cleanup if pid file was missing/stale.
 pkill -f "ollama serve" >/dev/null 2>&1 || true
 
 if [[ -d "$PID_DIR" ]]; then

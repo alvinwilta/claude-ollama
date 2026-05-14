@@ -13,9 +13,7 @@ PID_DIR="$ROOT_DIR/.claude-ollama-pids"
 mkdir -p "$PID_DIR"
 
 OLLAMA_PID_FILE="$PID_DIR/ollama.pid"
-MCP_PID_FILE="$PID_DIR/mcp.pid"
 OLLAMA_LOG="$PID_DIR/ollama.log"
-MCP_LOG="$PID_DIR/mcp.log"
 
 if [[ -f "$OLLAMA_PID_FILE" ]]; then
   OLD_PID="$(cat "$OLLAMA_PID_FILE" 2>/dev/null || true)"
@@ -47,23 +45,4 @@ if [[ "$READY" != "1" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$ROOT_DIR/dist/index.js" ]]; then
-  echo "dist/index.js not found. Run: npm run build" >&2
-  exit 1
-fi
-
-if [[ -f "$MCP_PID_FILE" ]]; then
-  OLD_PID="$(cat "$MCP_PID_FILE" 2>/dev/null || true)"
-  if [[ -n "${OLD_PID:-}" ]] && kill -0 "$OLD_PID" >/dev/null 2>&1; then
-    echo "MCP server already running (pid $OLD_PID)."
-    exit 0
-  else
-    rm -f "$MCP_PID_FILE"
-  fi
-fi
-
-echo "Starting MCP server in background..."
-nohup node "$ROOT_DIR/dist/index.js" >"$MCP_LOG" 2>&1 &
-echo $! > "$MCP_PID_FILE"
-
-echo "Running."
+echo "Ollama is running."
